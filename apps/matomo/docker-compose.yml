@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  db:
+    image: mariadb
+    command: --max-allowed-packet=64MB
+    restart: always
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD="toor"
+    env_file:
+      - ./db.env
+    networks:
+      - db
+
+  app:
+    image: matomo
+    restart: always
+    volumes:
+      - matomo:/var/www/html
+    environment:
+      - MATOMO_DATABASE_HOST=db
+    env_file:
+      - ./db.env
+    ports:
+      - 8080:80
+    networks:
+     - proxy
+     - db
+    labels:
+      - "traefik.docker.network=proxy"
+      - "traefik.enable=true"
+      - "traefik.http.routers.matomo.entrypoints=websecure"
+      - "traefik.http.routers.matomo.rule=Host(`matomo.k8smm.org`)"
+
+volumes:
+  matomo:
+
+networks:
+  db:
+    driver: bridge
+  proxy:
+       external: true
